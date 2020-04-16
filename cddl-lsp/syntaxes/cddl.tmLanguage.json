@@ -1,0 +1,41 @@
+{
+  "scopeName": "source.cddl",
+  "patterns": [{ "include": "#expression" }],
+  "repository": {
+    "expression": {
+      "patterns": [
+        { "include": "#range-control-operator" },
+        { "include": "#group-expression" },
+        { "include": "#map-expression" }
+      ]
+    },
+    "group-expression": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": { "name": "punctuation.paren.open" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.paren.close" }
+      },
+      "name": "expression.group",
+      "patterns": [{ "include": "#expression" }]
+    },
+    "map-expression": {
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.brace.open" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.brace.close" }
+      },
+      "name": "expression.map",
+      "patterns": [{ "include": "#expression" }]
+    },
+    "range-control-operator": {
+      "match": "(\\.\\.)|(\\.\\.\\.)|(\\.eq)|(\\.gt)",
+      "name": "keyword.range-control-operator"
+    }
+  }
+}
