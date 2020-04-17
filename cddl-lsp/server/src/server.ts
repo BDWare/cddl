@@ -10,7 +10,9 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InitializeResult
+	InitializeResult,
+	Hover,
+	HoverParams,
 } from 'vscode-languageserver';
 
 import {
@@ -57,7 +59,8 @@ connection.onInitialize((params: InitializeParams) => {
 			// Tell the client that the server supports code completion
 			completionProvider: {
 				resolveProvider: true
-			}
+			},
+			hoverProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -229,6 +232,34 @@ connection.onCompletionResolve(
 		}
 
 		return item;
+	}
+);
+
+connection.onHover(
+	(params: HoverParams): Hover | undefined => {
+		let text = documents.get(params.textDocument.uri)?.getText();
+
+		let start = params.position.character;
+		let end = params.position.character;
+
+		if (text !== undefined && !(text.length - 1 < params.position.character || text[params.position.character] == ' ')) {
+			while (text[start] != ' ' && start > 0) {
+				start--;
+			}
+			while (text[end] != ' ' && end < text.length - 1) {
+				end++;
+			}
+		}
+
+		let item = text?.substring(start == 0 ? 0 : start + 1, end - start);
+
+		for (let index = 0; index < standardPrelude.length; index++) {
+			if (item == standardPrelude[index].label) {
+				return {
+					contents: standardPrelude[index].detail
+				};
+			}
+		}
 	}
 );
 
