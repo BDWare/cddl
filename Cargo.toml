@@ -8,6 +8,7 @@ version = "0.6.0"
 authors = ["Andrew Weiss <andrew.weiss@outlook.com>"]
 readme = "README.md"
 edition = "2018"
+exclude = ["cddl-lsp/**/*", "www/**/*", ".github/**/*", ".devcontainer/**/*", "pkg/**/*", ".dockerignore", "Dockerfile"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

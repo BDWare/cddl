@@ -18,6 +18,7 @@ import {
 } from 'vscode-languageserver-textdocument';
 
 import * as wasm from 'cddl';
+import { standardPrelude } from './keywords';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -30,6 +31,8 @@ let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
+
+let cddl: any;
 
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -139,7 +142,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	let text = textDocument.getText();
-	let cddl: any;
 	try {
 		cddl = wasm.cddl_from_str(text);
 	} catch (e) {
@@ -200,18 +202,18 @@ connection.onCompletion(
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		return [
-			{
-				label: 'int',
+		let completionItems = [];
+
+		for (let index = 0; index < standardPrelude.length; index++) {
+			completionItems[index] = {
+				label: standardPrelude[index].label,
 				kind: CompletionItemKind.Keyword,
-				data: 1
-			},
-			{
-				label: 'tstr',
-				kind: CompletionItemKind.Keyword,
-				data: 2
-			}
-		];
+				data: index
+			};
+
+		}
+
+		return completionItems;
 	}
 );
 
@@ -219,13 +221,13 @@ connection.onCompletion(
 // the completion list.
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
+		for (let index = 0; index < standardPrelude.length; index++) {
+			if (item.data == index) {
+				item.detail = standardPrelude[index].detail;
+				break;
+			}
 		}
+
 		return item;
 	}
 );
