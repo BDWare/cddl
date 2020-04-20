@@ -245,8 +245,6 @@ connection.onHover(
 	(params: HoverParams): Hover | undefined => {
 		let identifier = getIdentifierAtPosition(params);
 
-		console.log(identifier);
-
 		for (let index = 0; index < standardPrelude.length; index++) {
 			if (identifier && identifier == standardPrelude[index].label) {
 				return {
@@ -258,7 +256,38 @@ connection.onHover(
 );
 
 connection.onDefinition(params => {
-	console.log(getIdentifierAtPosition(params));
+	let ident = getIdentifierAtPosition(params);
+
+	let document = documents.get(params.textDocument.uri);
+
+	if (document === undefined) {
+		return undefined;
+	}
+
+	if (ident) {
+		for (const rule of cddl.rules) {
+			if (rule.Type && rule.Type.rule.name.ident === ident) {
+				let start_position = document.positionAt(rule.Type.rule.name.span[0]);
+				let end_position = document.positionAt(rule.Type.rule.name.span[1]);
+
+				return {
+					uri: params.textDocument.uri,
+					range: {
+						start: {
+							character: start_position.character,
+							line: start_position.line,
+						},
+						end: {
+							character: end_position.character,
+							line: end_position.line
+						}
+					}
+				};
+			}
+		}
+	}
+
+
 
 	return undefined;
 });
