@@ -4,38 +4,126 @@
   "repository": {
     "expression": {
       "patterns": [
-        { "include": "#range-control-operator" },
         { "include": "#group-expression" },
-        { "include": "#map-expression" }
+        { "include": "#map-expression" },
+        { "include": "#array-expression" },
+        { "include": "#range-control-operator" },
+        { "include": "#standard-prelude" },
+        { "include": "#comments" },
+        { "include": "#literal-text-string" },
+        { "include": "#literal-byte-string" },
+        { "include": "#socketplug" },
+        { "include": "#ruleidentifier" }
       ]
     },
     "group-expression": {
       "begin": "\\(",
       "end": "\\)",
       "beginCaptures": {
-        "0": { "name": "punctuation.paren.open" }
+        "0": { "name": "punctuation.definition.group.begin.cddl" }
       },
       "endCaptures": {
-        "0": { "name": "punctuation.paren.close" }
+        "0": { "name": "punctuation.definition.group.end.cddl" }
       },
-      "name": "expression.group",
+      "name": "meta.structure.group.cddl",
       "patterns": [{ "include": "#expression" }]
     },
     "map-expression": {
       "begin": "\\{",
       "end": "\\}",
       "beginCaptures": {
-        "0": { "name": "punctuation.brace.open" }
+        "0": { "name": "punctuation.definition.map.begin.cddl" }
       },
       "endCaptures": {
-        "0": { "name": "punctuation.brace.close" }
+        "0": { "name": "punctuation.definition.map.end.cddl" }
       },
-      "name": "expression.map",
+      "name": "meta.structure.map.cddl",
+      "patterns": [{ "include": "#expression" }]
+    },
+    "array-expression": {
+      "begin": "\\[",
+      "end": "\\]",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.array.begin.cddl" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.array.end.cddl" }
+      },
+      "name": "meta.structure.array.cddl",
       "patterns": [{ "include": "#expression" }]
     },
     "range-control-operator": {
-      "match": "(\\.\\.)|(\\.\\.\\.)|(\\.eq)|(\\.gt)",
-      "name": "keyword.range-control-operator"
+      "match": "\\.\\.\\.|\\.\\.|\\.size|\\.bits|\\.regex|\\.pcre|\\.cbor|\\.cborseq|\\.within|\\.and|\\.lt|\\.le|\\.gt|\\.ge|\\.eq|\\.ne|\\.default",
+      "name": "keyword.range-control-operator.cddl"
+    },
+    "standard-prelude": {
+      "match": "any|uint|nint|int|bstr|bytes|tstr|text|tdate|time|number|biguint|bignint|bigint|integer|unsigned|decfrac|bigfloat|eb64url|eb64legacy|eb16|encoded\\-cbor|uri|b64url|b64legacy|regexp|mime\\-message|cbor\\-any|float16|float32|float64|float16\\-32|float32\\-64|float|false|true|bool|nil|null|undefined",
+      "name": "keyword.standard-prelude.cddl"
+    },
+    "comments": {
+      "match": "(;).*$\\n?",
+      "name": "comment.line.cddl",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.comment.cddl"
+        }
+      }
+    },
+    "literal-text-string": {
+      "name": "string.quoted.double.cddl",
+      "begin": "\"",
+      "beginCaputres": {
+        "0": {
+          "name": "punctuation.definition.string.begin.cddl"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.cddl"
+        }
+      },
+      "patterns": [{ "include": "#stringcontent" }]
+    },
+    "literal-byte-string": {
+      "name": "string.quoted.single.cddl",
+      "begin": "(b64|h)?'",
+      "beginCaputres": {
+        "0": {
+          "name": "punctuation.definition.string.begin.cddl"
+        }
+      },
+      "end": "'",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.cddl"
+        }
+      },
+      "patterns": [{ "include": "#stringcontent" }]
+    },
+    "stringcontent": {
+      "patterns": [
+        {
+          "match": "(?x)                # turn on extended mode\n  \\\\                # a literal backslash\n  (?:               # ...followed by...\n    [\"\\\\/bfnrt]     # one of these characters\n    |               # ...or...\n    u               # a u\n    [0-9a-fA-F]{4}) # and four hex digits",
+          "name": "constant.character.escape.cddl"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.unrecognized-string-escape.cddl"
+        }
+      ]
+    },
+    "socketplug": {
+      "name": "punctuation.definition.keyword.cddl",
+      "match": "\\$\\$|\\$"
+    },
+    "ruleidentifier": {
+      "name": "variable.cddl",
+      "match": "\\b\\w+(?=(<\\w+(,\\s*\\w+)*>)?\\s*(=|//=|/=))"
+    },
+    "choiceseparator": {
+      "name": "punctuation.separator.choice.cddl",
+      "match": "/|//"
     }
   }
 }

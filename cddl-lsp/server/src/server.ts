@@ -16,6 +16,7 @@ import {
 	TypeDefinitionParams,
 	CancellationToken,
 	HandlerResult,
+	TextDocumentIdentifier,
 } from 'vscode-languageserver';
 
 import {
@@ -242,11 +243,9 @@ connection.onCompletionResolve(
 
 connection.onHover(
 	(params: HoverParams): Hover | undefined => {
-		let documentText = documents.get(params.textDocument.uri)?.getText();
+		let identifier = getIdentifierAtPosition(params);
 
-		console.log("testing");
-
-		let identifier = getIdentifierAtPosition(documentText, params.position);
+		console.log(identifier);
 
 		for (let index = 0; index < standardPrelude.length; index++) {
 			if (identifier && identifier == standardPrelude[index].label) {
@@ -259,27 +258,40 @@ connection.onHover(
 );
 
 connection.onDefinition(params => {
-	let documentText = documents.get(params.textDocument.uri)?.getText();
-
-	console.log(getIdentifierAtPosition(documentText, params.position));
+	console.log(getIdentifierAtPosition(params));
 
 	return undefined;
 });
 
-function getIdentifierAtPosition(documentText: string | undefined, position: Position): string | undefined {
-	let start = position.character;
-	let end = position.character;
+function getIdentifierAtPosition(docParams: TextDocumentPositionParams): string | undefined {
+	let document = documents.get(docParams.textDocument.uri);
 
-	if (documentText && !(documentText.length - 1 < position.character || documentText[position.character] == ' ')) {
-		while (documentText[start] != ' ' && start > 0) {
-			start--;
-		}
-		while (documentText[end] != ' ' && end < documentText.length - 1) {
-			end++;
-		}
+	if (document === undefined) {
+		return undefined;
 	}
 
-	return documentText?.substring(start == 0 ? 0 : start + 1, end - start);
+	let documentText = document.getText();
+	let offset = document.offsetAt(docParams.position);
+
+	if (offset === undefined) {
+		return undefined;
+	}
+
+	let start = offset;
+	let end = offset;
+
+	if (documentText && (documentText.length < offset || documentText[offset] === ' ')) {
+		return undefined;
+	}
+
+	while ((documentText[start] !== ' ' && documentText[start] !== '<' && documentText[start] !== '>' && documentText[start] !== '\n') && start > 0) {
+		start--;
+	}
+	while ((documentText[end] !== ' ' && documentText[end] !== ',' && documentText[end] !== '<' && documentText[end] !== '>' && documentText[end] !== '\n') && end < documentText.length) {
+		end++;
+	}
+
+	return documentText?.substring(start == 0 ? 0 : start + 1, end);
 }
 
 
