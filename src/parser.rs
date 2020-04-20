@@ -33,7 +33,7 @@ pub type Result<T> = result::Result<T, Error>;
 /// Parser type
 pub struct Parser<'a, I>
 where
-  I: Iterator<Item = lexer::Item<'a>>,
+  I: Iterator<Item = lexer::Item<'a>>,w
 {
   tokens: I,
   str_input: &'a str,

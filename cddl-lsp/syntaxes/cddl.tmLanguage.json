@@ -8,12 +8,12 @@
         { "include": "#map-expression" },
         { "include": "#array-expression" },
         { "include": "#range-control-operator" },
+        { "include": "#socketplug" },
         { "include": "#ruleidentifier" },
         { "include": "#standard-prelude" },
         { "include": "#comments" },
         { "include": "#literal-text-string" },
-        { "include": "#literal-byte-string" },
-        { "include": "#socketplug" }
+        { "include": "#literal-byte-string" }
       ]
     },
     "group-expression": {
@@ -114,7 +114,7 @@
       ]
     },
     "socketplug": {
-      "name": "punctuation.definition.keyword.cddl",
+      "name": "keyword.operator.cddl",
       "match": "\\$\\$|\\$"
     },
     "ruleidentifier": {
