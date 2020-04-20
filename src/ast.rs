@@ -5,7 +5,7 @@ use std::fmt;
 use std::borrow::Cow;
 
 #[cfg(target_arch = "wasm32")]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
 use alloc::{
@@ -23,10 +23,11 @@ pub type Span = (usize, usize, usize);
 /// ```abnf
 /// cddl = S 1*(rule S)
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Default, Debug, PartialEq)]
 pub struct CDDL<'a> {
   /// Zero or more production rules
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub rules: Vec<Rule<'a>>,
 }
 
@@ -50,7 +51,7 @@ impl<'a> fmt::Display for CDDL<'a> {
 /// EALPHA = ALPHA / "@" / "_" / "$"
 /// DIGIT = %x30-39
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct Identifier<'a> {
   /// Identifier
@@ -109,12 +110,16 @@ impl<'a> From<&'static str> for Identifier<'a> {
 /// rule = typename [genericparm] S assignt S type
 ///     / groupname [genericparm] S assigng S grpent
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum Rule<'a> {
   /// Type expression
-  Type { rule: TypeRule<'a>, span: Span },
+  Type {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
+    rule: TypeRule<'a>,
+    span: Span,
+  },
   /// Group expression
   Group {
     rule: Box<GroupRule<'a>>,
@@ -165,10 +170,11 @@ impl<'a> Rule<'a> {
 /// ```abnf
 /// typename [genericparm] S assignt S type
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct TypeRule<'a> {
   /// Type name identifier
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub name: Identifier<'a>,
   /// Optional generic parameters
   pub generic_param: Option<GenericParm<'a>>,
@@ -203,10 +209,11 @@ impl<'a> fmt::Display for TypeRule<'a> {
 /// ```abnf
 /// groupname [genericparm] S assigng S grpent
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct GroupRule<'a> {
   /// Group name identifier
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub name: Identifier<'a>,
   /// Optional generic parameters
   pub generic_param: Option<GenericParm<'a>>,
@@ -241,10 +248,11 @@ impl<'a> fmt::Display for GroupRule<'a> {
 /// ```abnf
 /// genericparm =  "<" S id S *("," S id S ) ">"
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Default, PartialEq)]
 pub struct GenericParm<'a> {
   /// List of generic parameters
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub params: Vec<Identifier<'a>>,
   /// Span
   pub span: Span,
@@ -272,10 +280,11 @@ impl<'a> fmt::Display for GenericParm<'a> {
 /// ```abnf
 /// genericarg = "<" S type1 S *("," S type1 S )  ">"
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenericArg<'a> {
   /// Generic arguments
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub args: Vec<Type1<'a>>,
   /// Span
   pub span: Span,
@@ -313,10 +322,11 @@ impl<'a> GenericArg<'a> {
 /// ```abnf
 /// type = type1 *(S "/" S  type1)
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Type<'a> {
   /// Type choices
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub type_choices: Vec<Type1<'a>>,
   /// Span
   pub span: Span,
@@ -367,13 +377,15 @@ impl<'a> Type<'a> {
 /// ```abnf
 /// type1 = type2 [S (rangeop / ctlop) S type2]
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Type1<'a> {
   /// Type
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub type2: Type2<'a>,
   /// Range or control operator over a second type
-  pub operator: Option<(RangeCtlOp, Type2<'a>)>,
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
+  pub operator: Option<(RangeCtlOp<'a>, Type2<'a>)>,
   /// Span
   pub span: Span,
 }
@@ -410,17 +422,17 @@ impl<'a> fmt::Display for Type1<'a> {
 /// rangeop = "..." / ".."
 /// ctlop = "." id
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 #[allow(missing_docs)]
-pub enum RangeCtlOp {
+pub enum RangeCtlOp<'a> {
   /// Range operator
   RangeOp { is_inclusive: bool, span: Span },
   /// Control operator
-  CtlOp { ctrl: &'static str, span: Span },
+  CtlOp { ctrl: &'a str, span: Span },
 }
 
-impl fmt::Display for RangeCtlOp {
+impl<'a> fmt::Display for RangeCtlOp<'a> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       RangeCtlOp::RangeOp {
@@ -450,7 +462,7 @@ impl fmt::Display for RangeCtlOp {
 ///     / "#" DIGIT ["." uint]                ; major/ai
 ///     / "#"                                 ; any
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum Type2<'a> {
@@ -605,11 +617,12 @@ impl<'a> From<RangeValue<'a>> for Type2<'a> {
 /// ```abnf
 /// group = grpchoice * (S "//" S grpchoice)
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub struct Group<'a> {
   /// Group choices
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub group_choices: Vec<GroupChoice<'a>>,
   pub span: Span,
 }
@@ -638,11 +651,12 @@ impl<'a> fmt::Display for Group<'a> {
 /// ```
 ///
 /// If tuple is true, then entry is marked by a trailing comma
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GroupChoice<'a> {
   /// Group entries where the second item in the tuple indicates where or not a
   /// trailing comma is present
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub group_entries: Vec<(GroupEntry<'a>, bool)>,
   /// Span
   pub span: Span,
@@ -675,17 +689,19 @@ impl<'a> fmt::Display for GroupChoice<'a> {
 ///       / [occur S] groupname [genericarg]  ; preempted by above
 ///       / [occur S] "(" S group S ")"
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum GroupEntry<'a> {
   /// Value group entry type
   ValueMemberKey {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
     ge: Box<ValueMemberKeyEntry<'a>>,
     span: Span,
   },
   /// Group entry from a named group or type
   TypeGroupname {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
     ge: TypeGroupnameEntry<'a>,
     span: Span,
   },
@@ -719,7 +735,7 @@ impl<'a> fmt::Display for GroupEntry<'a> {
 /// ```abnf
 /// [occur S] [memberkey S] type
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValueMemberKeyEntry<'a> {
   /// Optional occurrence indicator
@@ -727,6 +743,7 @@ pub struct ValueMemberKeyEntry<'a> {
   /// Optional member key
   pub member_key: Option<MemberKey<'a>>,
   /// Entry type
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub entry_type: Type<'a>,
 }
 
@@ -749,12 +766,13 @@ impl<'a> fmt::Display for ValueMemberKeyEntry<'a> {
 }
 
 /// Group entry from a named type or group
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeGroupnameEntry<'a> {
   /// Optional occurrence indicator
   pub occur: Option<Occur>,
   /// Type or group name identifier
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   pub name: Identifier<'a>,
   /// Optional generic arguments
   pub generic_arg: Option<GenericArg<'a>>,
@@ -784,34 +802,39 @@ impl<'a> fmt::Display for TypeGroupnameEntry<'a> {
 ///           / bareword S ":"
 ///           / value S ":"
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum MemberKey<'a> {
   /// Type expression
   Type1 {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
     t1: Box<Type1<'a>>,
     is_cut: bool,
     span: Span,
   },
   /// Bareword string type
   Bareword {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
     ident: Identifier<'a>,
     span: Span,
   },
   /// Value type
   Value {
+    #[cfg_attr(target_arch = "wasm32", serde(borrow))]
     value: Value<'a>,
     span: Span,
   },
   NonMemberKey(NonMemberKey<'a>),
 }
 
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum NonMemberKey<'a> {
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   Group(Group<'a>),
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   Type(Type<'a>),
 }
 
@@ -839,7 +862,7 @@ impl<'a> fmt::Display for MemberKey<'a> {
 ///       / "+"
 ///       / "?"
 /// ```
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum Occur {

@@ -13,14 +13,18 @@ import {
 	InitializeResult,
 	Hover,
 	HoverParams,
+	TypeDefinitionParams,
+	CancellationToken,
+	HandlerResult,
 } from 'vscode-languageserver';
 
 import {
-	TextDocument
+	TextDocument, Position
 } from 'vscode-languageserver-textdocument';
 
 import * as wasm from 'cddl';
 import { standardPrelude } from './keywords';
+import { WorkDoneProgress } from 'vscode-languageserver/lib/progress';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -60,7 +64,8 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				resolveProvider: true
 			},
-			hoverProvider: true
+			hoverProvider: true,
+			definitionProvider: true,
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -237,24 +242,14 @@ connection.onCompletionResolve(
 
 connection.onHover(
 	(params: HoverParams): Hover | undefined => {
-		let text = documents.get(params.textDocument.uri)?.getText();
+		let documentText = documents.get(params.textDocument.uri)?.getText();
 
-		let start = params.position.character;
-		let end = params.position.character;
+		console.log("testing");
 
-		if (text !== undefined && !(text.length - 1 < params.position.character || text[params.position.character] == ' ')) {
-			while (text[start] != ' ' && start > 0) {
-				start--;
-			}
-			while (text[end] != ' ' && end < text.length - 1) {
-				end++;
-			}
-		}
-
-		let item = text?.substring(start == 0 ? 0 : start + 1, end - start);
+		let identifier = getIdentifierAtPosition(documentText, params.position);
 
 		for (let index = 0; index < standardPrelude.length; index++) {
-			if (item == standardPrelude[index].label) {
+			if (identifier && identifier == standardPrelude[index].label) {
 				return {
 					contents: standardPrelude[index].detail
 				};
@@ -262,6 +257,31 @@ connection.onHover(
 		}
 	}
 );
+
+connection.onDefinition(params => {
+	let documentText = documents.get(params.textDocument.uri)?.getText();
+
+	console.log(getIdentifierAtPosition(documentText, params.position));
+
+	return undefined;
+});
+
+function getIdentifierAtPosition(documentText: string | undefined, position: Position): string | undefined {
+	let start = position.character;
+	let end = position.character;
+
+	if (documentText && !(documentText.length - 1 < position.character || documentText[position.character] == ' ')) {
+		while (documentText[start] != ' ' && start > 0) {
+			start--;
+		}
+		while (documentText[end] != ' ' && end < documentText.length - 1) {
+			end++;
+		}
+	}
+
+	return documentText?.substring(start == 0 ? 0 : start + 1, end - start);
+}
+
 
 /*
 connection.onDidOpenTextDocument((params) => {

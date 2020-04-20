@@ -190,7 +190,7 @@ impl<'a> Validator<Value> for CDDL<'a> {
   fn validate_control_operator(
     &self,
     _target: &Type2,
-    _operator: &'static str,
+    _operator: &str,
     _controller: &Type2,
     _value: &Value,
   ) -> Result {

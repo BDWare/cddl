@@ -152,7 +152,7 @@ pub trait Validator<T> {
   fn validate_control_operator(
     &self,
     target: &Type2,
-    operator: &'static str,
+    operator: &str,
     controller: &Type2,
     value: &T,
   ) -> Result;

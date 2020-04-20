@@ -4,7 +4,7 @@ use std::{convert::TryFrom, fmt};
 use std::borrow::Cow;
 
 #[cfg(target_arch = "wasm32")]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(not(feature = "std"))]
 use alloc::{borrow::Cow, string::String};
@@ -314,7 +314,7 @@ impl<'a> fmt::Display for RangeValue<'a> {
 
 /// Literal value
 // TODO: support hexfloat and exponent
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value<'a> {
   /// Integer value
@@ -324,8 +324,10 @@ pub enum Value<'a> {
   /// Float value
   FLOAT(f64),
   /// Text value
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   TEXT(&'a str),
   /// Byte value
+  #[cfg_attr(target_arch = "wasm32", serde(borrow))]
   BYTE(ByteValue<'a>),
 }
 
@@ -359,7 +361,7 @@ impl<'a> From<&'static str> for Value<'a> {
 }
 
 /// Byte string values
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone)]
 pub enum ByteValue<'a> {
   /// Unprefixed byte string value
@@ -393,7 +395,7 @@ impl<'a> fmt::Display for ByteValue<'a> {
 }
 
 /// Socket/plug prefix
-#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SocketPlug {
   /// Type socket `$`
