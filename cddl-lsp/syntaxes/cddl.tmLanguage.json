@@ -54,7 +54,7 @@
     },
     "range-control-operator": {
       "match": "\\.\\.\\.|\\.\\.|\\.size|\\.bits|\\.regex|\\.pcre|\\.cbor|\\.cborseq|\\.within|\\.and|\\.lt|\\.le|\\.gt|\\.ge|\\.eq|\\.ne|\\.default",
-      "name": "keyword.range-control-operator.cddl"
+      "name": "keyword.operator.cddl"
     },
     "standard-prelude": {
       "match": "\\bany|\\binteger|\\buint|\\bnint|\\bint|\\bbstr|\\bbytes|\\btstr|\\btext|\\btdate|\\btime|\\bnumber|\\bbiguint|\\bbignint|\\bbigint|\\bunsigned|\\bdecfrac|\\bbigfloat|\\beb64url|\\beb64legacy|\\beb16|\\bencoded\\-cbor|\\buri|\\bb64url|\\bb64legacy|\\bregexp|\\bmime\\-message|\\bcbor\\-any|\\bfloat16|\\bfloat32|\\bfloat64|\\bfloat16\\-32|\\bfloat32\\-64|\\bfloat|\\bfalse|\\btrue|\\bbool|\\bnil|\\bnull|\\bundefined",
