@@ -17,6 +17,7 @@ import {
 	CancellationToken,
 	HandlerResult,
 	TextDocumentIdentifier,
+	MarkupContent,
 } from 'vscode-languageserver';
 
 import {
@@ -24,7 +25,7 @@ import {
 } from 'vscode-languageserver-textdocument';
 
 import * as wasm from 'cddl';
-import { standardPrelude } from './keywords';
+import { standardPrelude, controlOperators } from './keywords';
 import { WorkDoneProgress } from 'vscode-languageserver/lib/progress';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -63,7 +64,8 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server supports code completion
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				triggerCharacters: ['.']
 			},
 			hoverProvider: true,
 			definitionProvider: true,
@@ -154,10 +156,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	try {
 		cddl = wasm.cddl_from_str(text);
 	} catch (e) {
-		console.log(e);
+		// console.log(e);
 	}
 
-	console.log(cddl);
+	// console.log(cddl);
 
 	let pattern = /\b[A-Z]{2,}\b/g;
 	let m: RegExpExecArray | null;
@@ -205,33 +207,63 @@ connection.onDidChangeWatchedFiles(_change => {
 	connection.console.log('We received an file change event');
 });
 
+let triggeredOnControl = false;
+
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+	(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		let completionItems = [];
+		let completionItems: CompletionItem[] = [];
+
+		let char = documents.get(textDocumentPosition.textDocument.uri)?.getText({ start: { character: textDocumentPosition.position.character - 1, line: textDocumentPosition.position.line }, end: textDocumentPosition.position });
+
+		if (char === '.') {
+			triggeredOnControl = true;
+
+			for (let index = 0; index < controlOperators.length; index++) {
+				completionItems[index] = {
+					label: controlOperators[index].label,
+					kind: CompletionItemKind.Keyword,
+					data: index,
+					documentation: controlOperators[index].documentation
+				};
+			}
+
+
+			return completionItems;
+		}
 
 		for (let index = 0; index < standardPrelude.length; index++) {
 			completionItems[index] = {
 				label: standardPrelude[index].label,
 				kind: CompletionItemKind.Keyword,
-				data: index
+				data: index,
+				documentation: standardPrelude[index].documentation
 			};
-
 		}
 
 		return completionItems;
 	}
 );
 
+
 // This handler resolves additional information for the item selected in
 // the completion list.
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
+		if (triggeredOnControl) {
+			for (let index = 0; index < controlOperators.length; index++) {
+				if (item.data === index) {
+					item.insertText = item.label.substring(1);
+					return item;
+				}
+			}
+		}
+
 		for (let index = 0; index < standardPrelude.length; index++) {
-			if (item.data == index) {
+			if (item.data === index) {
 				item.detail = standardPrelude[index].detail;
 				break;
 			}
@@ -245,10 +277,22 @@ connection.onHover(
 	(params: HoverParams): Hover | undefined => {
 		let identifier = getIdentifierAtPosition(params);
 
-		for (let index = 0; index < standardPrelude.length; index++) {
-			if (identifier && identifier == standardPrelude[index].label) {
+		if (identifier === undefined) {
+			return undefined;
+		}
+
+		for (const itemDetail of standardPrelude) {
+			if (identifier === itemDetail.label) {
 				return {
-					contents: standardPrelude[index].detail
+					contents: itemDetail.detail
+				};
+			}
+		}
+
+		for (const itemDetail of controlOperators) {
+			if (identifier == itemDetail.label) {
+				return {
+					contents: itemDetail.documentation ? itemDetail.documentation as MarkupContent : itemDetail.detail
 				};
 			}
 		}
@@ -284,13 +328,31 @@ connection.onDefinition(params => {
 					}
 				};
 			}
+
+			if (rule.Group && rule.Group.rule.name.ident === ident) {
+				let start_position = document.positionAt(rule.Group.rule.name.span[0]);
+				let end_position = document.positionAt(rule.Group.rule.name.span[1]);
+
+				return {
+					uri: params.textDocument.uri,
+					range: {
+						start: {
+							character: start_position.character,
+							line: start_position.line,
+						},
+						end: {
+							character: end_position.character,
+							line: end_position.line
+						}
+					}
+				};
+			}
 		}
 	}
 
-
-
 	return undefined;
 });
+
 
 function getIdentifierAtPosition(docParams: TextDocumentPositionParams): string | undefined {
 	let document = documents.get(docParams.textDocument.uri);

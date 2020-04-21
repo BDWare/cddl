@@ -13,7 +13,9 @@
         { "include": "#standard-prelude" },
         { "include": "#comments" },
         { "include": "#literal-text-string" },
-        { "include": "#literal-byte-string" }
+        { "include": "#literal-byte-string" },
+        { "include": "#choiceseparator" },
+        { "include": "#occurrence" }
       ]
     },
     "group-expression": {
@@ -57,7 +59,7 @@
       "name": "keyword.operator.cddl"
     },
     "standard-prelude": {
-      "match": "\\bany|\\binteger|\\buint|\\bnint|\\bint|\\bbstr|\\bbytes|\\btstr|\\btext|\\btdate|\\btime|\\bnumber|\\bbiguint|\\bbignint|\\bbigint|\\bunsigned|\\bdecfrac|\\bbigfloat|\\beb64url|\\beb64legacy|\\beb16|\\bencoded\\-cbor|\\buri|\\bb64url|\\bb64legacy|\\bregexp|\\bmime\\-message|\\bcbor\\-any|\\bfloat16|\\bfloat32|\\bfloat64|\\bfloat16\\-32|\\bfloat32\\-64|\\bfloat|\\bfalse|\\btrue|\\bbool|\\bnil|\\bnull|\\bundefined",
+      "match": "\\b^any$|\\binteger|\\buint|\\bnint|\\bint|\\bbstr|\\bbytes|\\btstr|\\btext|\\btdate|\\btime|\\bnumber|\\bbiguint|\\bbignint|\\bbigint|\\bunsigned|\\bdecfrac|\\bbigfloat|\\beb64url|\\beb64legacy|\\beb16|\\bencoded\\-cbor|\\b^uri$|\\bb64url|\\bb64legacy|\\bregexp|\\bmime\\-message|\\bcbor\\-any|\\bfloat16|\\bfloat32|\\bfloat64|\\bfloat16\\-32|\\bfloat32\\-64|\\bfloat|\\bfalse|\\btrue|\\bbool|\\bnil|\\bnull|\\bundefined",
       "name": "keyword.standard-prelude.cddl"
     },
     "comments": {
@@ -124,6 +126,10 @@
     "choiceseparator": {
       "name": "punctuation.separator.choice.cddl",
       "match": "/|//"
+    },
+    "occurrence": {
+      "name": "keyword.operator.cddl",
+      "match": "\\?|\\+|\\d?\\*\\d?"
     }
   }
 }
