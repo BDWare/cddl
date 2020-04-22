@@ -20,6 +20,8 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
+
+
 import * as wasm from 'cddl';
 import { standardPrelude, controlOperators } from './keywords';
 import { WorkDoneProgress } from 'vscode-languageserver/lib/progress';
@@ -395,20 +397,12 @@ function getIdentifierAtPosition(docParams: TextDocumentPositionParams): string 
 		return undefined;
 	}
 
-	while ((documentText[start] !== ' '
-		&& documentText[start] !== '<'
-		&& documentText[start] !== '>'
-		&& documentText[start] !== '{'
-		&& documentText[start] !== '}'
-		&& documentText[start] !== '\n') && start > 0) {
+	let re = /\s|,|:|=|\*|\?|\+|<|>|{|}|\[|\]|\(|\)/;
+
+	while (!re.test(documentText[start]) && start > 0) {
 		start--;
 	}
-	while ((documentText[end] !== ' '
-		&& documentText[end] !== ','
-		&& documentText[end] !== '<'
-		&& documentText[end] !== '>'
-		&& documentText[end] !== '}'
-		&& documentText[end] !== '\n') && end < documentText.length) {
+	while (!re.test(documentText[end]) && end < documentText.length) {
 		end++;
 	}
 
