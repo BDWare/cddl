@@ -27,6 +27,9 @@ use alloc::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+use serde::Serialize;
+
 /// Alias for `Result` with an error of type `cddl::ParserError`
 pub type Result<T> = result::Result<T, Error>;
 
@@ -60,6 +63,7 @@ pub enum Error {
 }
 
 /// Parser error information and position
+#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
 #[derive(Debug)]
 pub struct ParserError {
   position: Position,
@@ -2030,10 +2034,14 @@ pub fn cddl_from_str<'a>(
 /// # Example
 ///
 /// ```
-/// use cddl::parser::cddl_from_str;
+/// import * as wasm from 'cddl';
 ///
-/// let input = r#"myrule = int"#;
-/// let c = cddl_from_str(input)?;
+/// let cddl: any;
+/// try {
+///   cddl = wasm.cddl_from_str(text);
+/// } catch (e) {
+///   console.error(e);
+/// }
 /// ```
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
@@ -2044,8 +2052,8 @@ pub fn cddl_from_str(input: &str) -> result::Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from(e.to_string()))
         .map(|c| c),
       Err(Error::PARSER) => {
-        if let Ok(Some(e)) = p.report_errors(false) {
-          return Err(JsValue::from(e));
+        if !p.errors.is_empty() {
+          return Err(JsValue::from_serde(&p.errors).map_err(|e| JsValue::from(e.to_string()))?);
         }
 
         Err(JsValue::from(Error::PARSER.to_string()))

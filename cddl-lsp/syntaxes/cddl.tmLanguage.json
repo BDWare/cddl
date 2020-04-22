@@ -59,7 +59,7 @@
       "name": "keyword.operator.cddl"
     },
     "standard-prelude": {
-      "match": "\\b^any$|\\binteger|\\buint|\\bnint|\\bint|\\bbstr|\\bbytes|\\btstr|\\btext|\\btdate|\\btime|\\bnumber|\\bbiguint|\\bbignint|\\bbigint|\\bunsigned|\\bdecfrac|\\bbigfloat|\\beb64url|\\beb64legacy|\\beb16|\\bencoded\\-cbor|\\b^uri$|\\bb64url|\\bb64legacy|\\bregexp|\\bmime\\-message|\\bcbor\\-any|\\bfloat16|\\bfloat32|\\bfloat64|\\bfloat16\\-32|\\bfloat32\\-64|\\bfloat|\\bfalse|\\btrue|\\bbool|\\bnil|\\bnull|\\bundefined",
+      "match": "(?<!-|_)\\bany\\b(?!-|_)|\\binteger|\\buint|\\bnint|\\bint|\\bbstr|\\bbytes|\\btstr|\\btext|\\btdate|\\btime|\\bnumber|\\bbiguint|\\bbignint|\\bbigint|\\bunsigned|\\bdecfrac|\\bbigfloat|\\beb64url|\\beb64legacy|\\beb16|\\bencoded\\-cbor|(?<!-|_)\\buri\\b(?!-|_)|\\bb64url|\\bb64legacy|\\bregexp|\\bmime\\-message|\\bcbor\\-any|\\bfloat16|\\bfloat32|\\bfloat64|\\bfloat16\\-32|\\bfloat32\\-64|\\bfloat|\\bfalse|\\btrue|\\bbool|\\bnil|\\bnull|\\bundefined",
       "name": "keyword.standard-prelude.cddl"
     },
     "comments": {

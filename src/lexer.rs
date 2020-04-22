@@ -22,10 +22,14 @@ use alloc::{
 };
 use lexical_core as lexical;
 
+#[cfg(target_arch = "wasm32")]
+use serde::Serialize;
+
 /// Alias for `Result` with an error of type `cddl::LexerError`
 pub type Result<T> = result::Result<T, LexerError>;
 
 /// Lexer position
+#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
 #[derive(Debug, Copy, Clone)]
 pub struct Position {
   /// Line number

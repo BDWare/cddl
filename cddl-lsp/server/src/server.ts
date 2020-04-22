@@ -13,15 +13,11 @@ import {
 	InitializeResult,
 	Hover,
 	HoverParams,
-	TypeDefinitionParams,
-	CancellationToken,
-	HandlerResult,
-	TextDocumentIdentifier,
 	MarkupContent,
 } from 'vscode-languageserver';
 
 import {
-	TextDocument, Position
+	TextDocument
 } from 'vscode-languageserver-textdocument';
 
 import * as wasm from 'cddl';
@@ -153,49 +149,48 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	let text = textDocument.getText();
+
+	let errors: any[] = [];
 	try {
 		cddl = wasm.cddl_from_str(text);
 	} catch (e) {
-		// console.log(e);
+		errors = e;
 	}
 
-	// console.log(cddl);
-
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
-	let problems = 0;
 	let diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		let diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
+	while (errors.length < settings.maxNumberOfProblems) {
+		for (const error of errors) {
+			let diagnostic: Diagnostic = {
+				severity: DiagnosticSeverity.Error,
+				range: {
+					start: textDocument.positionAt(error.position.range[0]),
+					end: textDocument.positionAt(error.position.range[1])
 				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
+				message: error.message,
+				source: 'cddl'
+			};
+			// if (hasDiagnosticRelatedInformationCapability) {
+			// 	diagnostic.relatedInformation = [
+			// 		{
+			// 			location: {
+			// 				uri: textDocument.uri,
+			// 				range: Object.assign({}, diagnostic.range)
+			// 			},
+			// 			message: 'Spelling matters'
+			// 		},
+			// 		{
+			// 			location: {
+			// 				uri: textDocument.uri,
+			// 				range: Object.assign({}, diagnostic.range)
+			// 			},
+			// 			message: 'Particularly for names'
+			// 		}
+			// 	];
+			// }
+			diagnostics.push(diagnostic);
 		}
-		diagnostics.push(diagnostic);
+
+		break;
 	}
 
 	// Send the computed diagnostics to VSCode.
@@ -310,23 +305,48 @@ connection.onDefinition(params => {
 
 	if (ident) {
 		for (const rule of cddl.rules) {
-			if (rule.Type && rule.Type.rule.name.ident === ident) {
-				let start_position = document.positionAt(rule.Type.rule.name.span[0]);
-				let end_position = document.positionAt(rule.Type.rule.name.span[1]);
+			if (rule.Type) {
+				if (rule.Type.rule.name.ident === ident) {
+					let start_position = document.positionAt(rule.Type.rule.name.span[0]);
+					let end_position = document.positionAt(rule.Type.rule.name.span[1]);
 
-				return {
-					uri: params.textDocument.uri,
-					range: {
-						start: {
-							character: start_position.character,
-							line: start_position.line,
-						},
-						end: {
-							character: end_position.character,
-							line: end_position.line
+					return {
+						uri: params.textDocument.uri,
+						range: {
+							start: {
+								character: start_position.character,
+								line: start_position.line,
+							},
+							end: {
+								character: end_position.character,
+								line: end_position.line
+							}
+						}
+					};
+				}
+
+				if (rule.Type.rule.generic_param) {
+					for (const gp of rule.Type.rule.generic_param.params) {
+						if (gp.ident === ident) {
+							let start_position = document.positionAt(gp.span[0]);
+							let end_position = document.positionAt(gp.span[1]);
+
+							return {
+								uri: params.textDocument.uri,
+								range: {
+									start: {
+										character: start_position.character,
+										line: start_position.line,
+									},
+									end: {
+										character: end_position.character,
+										line: end_position.line
+									}
+								}
+							};
 						}
 					}
-				};
+				}
 			}
 
 			if (rule.Group && rule.Group.rule.name.ident === ident) {
@@ -375,10 +395,20 @@ function getIdentifierAtPosition(docParams: TextDocumentPositionParams): string 
 		return undefined;
 	}
 
-	while ((documentText[start] !== ' ' && documentText[start] !== '<' && documentText[start] !== '>' && documentText[start] !== '\n') && start > 0) {
+	while ((documentText[start] !== ' '
+		&& documentText[start] !== '<'
+		&& documentText[start] !== '>'
+		&& documentText[start] !== '{'
+		&& documentText[start] !== '}'
+		&& documentText[start] !== '\n') && start > 0) {
 		start--;
 	}
-	while ((documentText[end] !== ' ' && documentText[end] !== ',' && documentText[end] !== '<' && documentText[end] !== '>' && documentText[end] !== '\n') && end < documentText.length) {
+	while ((documentText[end] !== ' '
+		&& documentText[end] !== ','
+		&& documentText[end] !== '<'
+		&& documentText[end] !== '>'
+		&& documentText[end] !== '}'
+		&& documentText[end] !== '\n') && end < documentText.length) {
 		end++;
 	}
 
